@@ -24,7 +24,7 @@ def process_image(image_dto: ImageDTO) -> Optional[dict]:
     """Process the uploaded image file, create two resized versions (large and medium) and return their paths."""
     try:
         # Open the uploaded image file
-        file_to_image = Image.open(image_dto.file.file)
+        file_to_image = Image.open(image_dto.file.stream)
 
         # Create large image (1000x1000, max 150kb)
         large_image = resize_and_crop_image(file_to_image, (1000, 1000), 150)
@@ -43,7 +43,7 @@ def process_image(image_dto: ImageDTO) -> Optional[dict]:
 def resize_and_crop_image(image: Image, resolution: tuple[int, int], file_size_kb: int) -> Image:
     """Resize and crop the image to a square, then compress to a target file size."""
     try:
-        image = image.convert('RGB')  # Ensure the image is in RGB format
+        image = image.convert('RGB')
 
         # Crop the image to a centered square
         width, height = image.size
@@ -54,9 +54,8 @@ def resize_and_crop_image(image: Image, resolution: tuple[int, int], file_size_k
         bottom = (height + min_dimension) / 2
 
         image = image.crop((left, top, right, bottom))
-        image.thumbnail(resolution)  # Resize to target resolution
+        image.thumbnail(resolution)
 
-        # Compress image to fit within the file size limit
         buffer = BytesIO()
         quality = 95
         while True:
