@@ -11,6 +11,7 @@ from provider.authProvider import get_auth_key
 from provider.gymbroProvider import get_last_ten_gyma_entries_of_user_and_friends
 from service.personService import get_person_by_user_id
 from session.sessionService import get_user_id_from_session_data
+from util.response import detail_response
 
 gymbro = Blueprint('gymbro', __name__, url_prefix='/api/v1/gymbro')
 
@@ -24,7 +25,7 @@ def get_gymbro_ten_latest():
 
     user_id = get_user_id_from_session_data(auth_token)
     if user_id is None:
-        abort(401, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     gymbro_ten_latest_gyma = get_last_ten_gyma_entries_of_user_and_friends(db, user_id, gyma_keys)
 

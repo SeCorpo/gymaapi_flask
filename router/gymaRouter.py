@@ -7,6 +7,7 @@ from provider.authProvider import get_auth_key
 from service.exerciseService import add_exercise_db
 from session.sessionService import get_user_id_from_session_data, set_gyma_id_in_session, get_session_data, delete_gyma_id_from_session
 from service.gymaService import add_gyma, set_time_of_leaving, get_gyma_by_gyma_id
+from util.response import detail_response
 
 gyma = Blueprint('gyma', __name__, url_prefix='/api/v1/gyma')
 
@@ -17,16 +18,17 @@ def start_gyma():
 
     user_id = get_user_id_from_session_data(auth_token)
     if user_id is None:
-        abort(401, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     gyma_instance = add_gyma(db, user_id)
     if gyma_instance is None:
-        abort(404, description="Gyma cannot be added")
+        return detail_response("Gyma cannot be added", 404)
 
     if set_gyma_id_in_session(auth_token, gyma_instance.gyma_id):
-        return jsonify(GymaDTO.from_orm(gyma_instance).model_dump()), 201
+        # todo: test + is jsonify needed here
+        return jsonify(GymaDTO.from_instance(gyma_instance).model_dump()), 201
     else:
-        abort(404, description="Gyma cannot be set in session")
+        return detail_response("Gyma cannot be set in session", 404)
 
 
 @gyma.route("/end", methods=['PUT'])
@@ -36,20 +38,20 @@ def end_gyma():
 
     session_data = get_session_data(auth_token)
     if session_data is None or session_data.gyma_id is None or session_data.user_id is None:
-        abort(404, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     gyma_instance = get_gyma_by_gyma_id(db, session_data.gyma_id)
     if gyma_instance is None:
-        abort(404, description="Gyma does not exist in database")
+        return detail_response("Gyma does not exist in database", 404)
 
     time_of_leaving = set_time_of_leaving(db, session_data.user_id, gyma_instance)
     if time_of_leaving is None:
-        abort(500, description="Failed to set time of leave")
+        return detail_response("Failed to set time of leave", 400)
 
     if delete_gyma_id_from_session(auth_token):
         return jsonify({"time_of_leaving": time_of_leaving}), 200
     else:
-        abort(500, description="Gyma cannot be removed from session")
+        return detail_response("Gyma cannot be removed from session", 400)
 
 
 @gyma.route("/exercise", methods=['POST'])
@@ -59,7 +61,7 @@ def add_exercise_to_gyma():
 
     session_data = get_session_data(auth_token)
     if session_data is None or session_data.gyma_id is None:
-        abort(404, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     exercise_dto = request.json
     exercise_data = ExerciseDTO(**exercise_dto)
@@ -68,4 +70,4 @@ def add_exercise_to_gyma():
     if added_exercise:
         return jsonify(added_exercise), 201
     else:
-        abort(400, description="Failed to add exercise")
+        return detail_response("Failed to add exercise", 400)

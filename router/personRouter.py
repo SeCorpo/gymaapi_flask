@@ -1,6 +1,6 @@
 import logging
 import os
-from flask import Blueprint, request, abort, jsonify
+from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from provider.authProvider import get_auth_key
 from provider.imageProvider import process_image, move_images_to_archive
 from service.personService import add_person, get_person_by_user_id, edit_person, set_pf_paths
 from session.sessionService import get_user_id_from_session_data
+from util.response import detail_response
 
 person = Blueprint('person', __name__, url_prefix='/api/v1/person')
 API_URL = os.getenv("API_BASE_URL")
@@ -26,20 +27,21 @@ def add_or_edit_person():
         enter_person_dto = EnterPersonDTO(**request.json)
     except ValidationError as e:
         logging.error(f"Validation Error: {e}")
-        abort(400, description="Invalid data format")
+        return detail_response("Invalid data format", 400)
 
     logging.info("Creating or editing person object for user")
 
     user_id = get_user_id_from_session_data(auth_token)
     if user_id is None:
-        abort(401, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     person_obj = get_person_by_user_id(db, user_id)
     if person_obj is None:
         logging.info("Creating person object for user")
         new_person = add_person(db, user_id, enter_person_dto)
         if new_person is None:
-            abort(500, description="Person cannot be created")
+            return detail_response("Person cannot be created", 400)
+
         else:
             person_dto = PersonDTO(
                 profile_url=new_person.profile_url,
@@ -62,7 +64,8 @@ def add_or_edit_person():
         logging.info("Updating person object for user")
         edited_person = edit_person(db, user_id, person_obj, enter_person_dto)
         if edited_person is None:
-            abort(500, description="Person cannot be updated")
+            return detail_response("Person cannot be updated", 400)
+
         else:
             person_dto = PersonDTO(
                 profile_url=edited_person.profile_url,
@@ -72,8 +75,8 @@ def add_or_edit_person():
                 sex=edited_person.sex,
                 city=edited_person.city,
                 profile_text=edited_person.profile_text,
-                pf_path_l=edited_person.pf_path_l,
-                pf_path_m=edited_person.pf_path_m,
+                pf_path_l=f"{API_URL}/images/large/{edited_person.pf_path_l}" if edited_person.pf_path_l else None,
+                pf_path_m=f"{API_URL}/images/medium/{edited_person.pf_path_m}" if edited_person.pf_path_m else None,
             ).model_dump(mode='json')
             my_profile_dto = MyProfileDTO(
                 personDTO=person_dto,
@@ -91,37 +94,37 @@ def upload_picture():
     file = request.files.get('file')
 
     if not file:
-        abort(400, description="No file provided")
+        return detail_response("No file provided", 403)
 
     logging.info("Processing picture for user")
 
     try:
         image_dto = ImageDTO(file=file)
-        image_dto.validate_file(file)  # Perform validation
+        image_dto.validate_file(file)
     except ValueError as e:
-        abort(400, description=str(e))
+        return detail_response("Invalid data format", 400)
 
     user_id = get_user_id_from_session_data(auth_token)
     if user_id is None:
-        abort(401, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     person_obj = get_person_by_user_id(db, user_id)
     if person_obj is None:
-        abort(404, description="Picture cannot be added if there is no person")
+        return detail_response("Picture cannot be added if there is no person", 404)
 
     if person_obj.pf_path_l and person_obj.pf_path_m is not None:
         logging.info("Archiving previous picture of user")
         move_ok = move_images_to_archive(person_obj.pf_path_l, person_obj.pf_path_m)
         if not move_ok:
-            abort(500, description="Picture cannot be moved to archive")
+            return detail_response("Picture cannot be moved to archive", 500)
 
     picture_names = process_image(image_dto)
     if picture_names is None:
-        abort(500, description="Picture cannot be processed, please try a different picture")
+        return detail_response("Picture cannot be processed, please try a different picture", 400)
 
     person_with_pf_paths = set_pf_paths(db, person_obj, picture_names["pf_path_l"], picture_names["pf_path_m"])
     if not person_with_pf_paths:
-        abort(500, description="New pictures cannot be added to person")
+        return detail_response("New pictures cannot be added to person", 400)
 
     return jsonify(PersonDTO(
         profile_url=person_with_pf_paths.profile_url,
@@ -133,5 +136,4 @@ def upload_picture():
         profile_text=person_with_pf_paths.profile_text,
         pf_path_l=f"{API_URL}/images/large/{person_with_pf_paths.pf_path_l}",
         pf_path_m=f"{API_URL}/images/medium/{person_with_pf_paths.pf_path_m}",
-    ).model_dump(mode='json')
-    ), 200
+    ).model_dump(mode='json')), 200

@@ -11,6 +11,7 @@ from provider.authProvider import get_auth_key
 from provider.mineProvider import get_last_three_gyma_entry_of_user
 from service.personService import get_person_by_user_id
 from session.sessionService import get_user_id_from_session_data
+from util.response import detail_response
 
 mine = Blueprint('mine', __name__, url_prefix='/api/v1/mine')
 
@@ -21,12 +22,11 @@ def get_mine_three_latest():
     auth_token = get_auth_key()
     gyma_keys = request.headers.get('Gymakeys', None)
 
-    logging.info(request.headers)
     logging.info(f"Searching for the latest three gyma entries {'excluding: ' + gyma_keys if gyma_keys is not None else ', no gyma_keys'}")
 
     user_id = get_user_id_from_session_data(auth_token)
     if user_id is None:
-        abort(401, description="Session invalid")
+        return detail_response("Session invalid", 401)
 
     mine_three_latest_gyma = get_last_three_gyma_entry_of_user(db, user_id, gyma_keys)
 

@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 from typing import List
 

@@ -12,8 +12,7 @@ def get_last_three_gyma_entry_of_user(db: Session, user_id: int, gyma_keys: str 
 
     try:
         gyma_keys_to_exclude = gyma_keys.split(",") if gyma_keys else []
-        logging.info(gyma_keys_to_exclude)
-        logging.info(f"Gyma to exclude: {', '.join(gyma_keys_to_exclude)}")
+
         query = (
             select(Gyma)
             .options(joinedload(Gyma.exercises).joinedload(GymaExercise.exercise))
