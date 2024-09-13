@@ -4,7 +4,7 @@ import string
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import NoResultFound, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 
 from model.UserVerification import UserVerification
 
@@ -20,6 +20,9 @@ def get_user_id_by_verification_code(db: Session, verification_code: str) -> int
     except SQLAlchemyError as e:
         logging.error(f"Error fetching user by verification code: {e}")
         return None
+    except Exception as e:
+        logging.error(f"Exception: Error fetching user by verification code: {e}")
+        return None
 
 
 def get_verification_code_by_user_id(db: Session, user_id: int) -> str | None:
@@ -33,6 +36,9 @@ def get_verification_code_by_user_id(db: Session, user_id: int) -> str | None:
     except SQLAlchemyError as e:
         logging.error(f"Error fetching verification code by user ID: {e}")
         return None
+    except Exception as e:
+        logging.error(f"Exception: Error fetching verification code by user ID: {e}")
+        return None
 
 
 def add_user_verification(db: Session, user_id: int, verification_code: str) -> bool:
@@ -44,6 +50,10 @@ def add_user_verification(db: Session, user_id: int, verification_code: str) -> 
         return True
     except SQLAlchemyError as e:
         logging.error(f"Error adding user verification: {e}")
+        db.rollback()
+        return False
+    except Exception as e:
+        logging.error(f"Exception: Error adding user verification: {e}")
         db.rollback()
         return False
 
@@ -63,6 +73,10 @@ def remove_user_verification(db: Session, user_id: int) -> bool:
             return False
     except SQLAlchemyError as e:
         logging.error(f"Error removing user verification: {e}")
+        db.rollback()
+        return False
+    except Exception as e:
+        logging.error(f"Exception: Error removing user verification: {e}")
         db.rollback()
         return False
 

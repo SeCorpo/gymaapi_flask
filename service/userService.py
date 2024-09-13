@@ -25,6 +25,10 @@ def add_user(db: Session, email: str, password: str) -> User | None:
         logging.error(f"Error adding user: {e}")
         db.rollback()
         return None
+    except Exception as e:
+        logging.error(f"Exception: Error adding user: {e}")
+        db.rollback()
+        return None
 
 
 def get_user_by_user_id(db: Session, user_id: int) -> User | None:
@@ -34,9 +38,13 @@ def get_user_by_user_id(db: Session, user_id: int) -> User | None:
         user = result.scalar_one_or_none()
         return user
     except NoResultFound:
+        logging.error(f"No user found with user_id: {user_id}")
         return None
     except SQLAlchemyError as e:
         logging.error(f"Error fetching user by ID: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Exception: Error fetching user by ID: {e}")
         return None
 
 
@@ -51,6 +59,9 @@ def get_user_by_email(db: Session, email: str) -> User | None:
     except SQLAlchemyError as e:
         logging.error(f"Error fetching user by email: {e}")
         return None
+    except Exception as e:
+        logging.error(f"Exception: Error fetching user by email: {e}")
+        return None
 
 
 def email_available(db: Session, email: str) -> bool:
@@ -61,6 +72,9 @@ def email_available(db: Session, email: str) -> bool:
         return user_exists is None
     except SQLAlchemyError as e:
         logging.error(f"Error checking email availability: {e}")
+        return False
+    except Exception as e:
+        logging.error(f"Exception: Error checking email availability: {e}")
         return False
 
 
@@ -79,5 +93,9 @@ def set_email_verification(db: Session, user: User, verified: bool = True) -> bo
         return True
     except SQLAlchemyError as e:
         logging.error(f"Error setting email verification: {e}")
+        db.rollback()
+        return False
+    except Exception as e:
+        logging.error(f"Exception: Error setting email verification: {e}")
         db.rollback()
         return False

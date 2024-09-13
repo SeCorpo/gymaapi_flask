@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from dto.personDTO import PersonDTO, PersonSimpleDTO
 from dto.profileDTO import ProfileDTO
-from provider.authProvider import get_auth_key_or_none, get_auth_key
+from provider.authProvider import get_auth_key
 from service.friendshipService import get_friends_by_person_id, get_friendship, add_friendship, remove_friendship, \
     get_friendship_of_requester, update_friendship_status
 from service.personService import get_person_by_profile_url, get_person_by_user_id
@@ -21,7 +21,7 @@ profile = Blueprint('profile', __name__, url_prefix='/api/v1/profile')
 @profile.route("/<string:profile_url>", methods=["GET"])
 def get_profile(profile_url):
     db: Session = next(get_db())
-    auth_token = get_auth_key_or_none()
+    auth_token = get_auth_key()
 
     logging.info("Get profile: %s", profile_url)
 

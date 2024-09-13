@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from flask import abort
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -23,11 +22,8 @@ def get_gyma_by_gyma_id(db: Session, gyma_id: int) -> Optional[Gyma]:
         return None
 
 
-def add_gyma(db: Session, user_id: Optional[int]) -> Optional[Gyma]:
+def add_gyma(db: Session, user_id: int) -> Optional[Gyma]:
     """ Add new Gyma to database. """
-    if user_id is None:
-        raise Exception("Gyma requires a person_id")
-
     try:
         new_gyma = Gyma(
             user_id=user_id,
@@ -47,13 +43,16 @@ def set_time_of_leaving(db: Session, user_id: int, gyma: Gyma) -> Optional[datet
     """ Time of leaving the gyma. """
     try:
         if gyma is None:
-            abort(404, description="Gyma cannot be found")
+            logging.error("Gyma cannot be found")
+            return None
 
         if gyma.user_id != user_id:
-            abort(403, description="Gyma can only be altered by its owner")
+            logging.error("Gyma can only be altered by its owner")
+            return None
 
         if gyma.time_of_leaving is not None:
-            abort(400, description="Gyma time_of_leaving has already been set")
+            logging.error("Gyma time_of_leaving has already been set")
+            return None
 
         gyma.time_of_leaving = datetime.now()
         db.commit()

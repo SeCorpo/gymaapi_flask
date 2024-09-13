@@ -1,6 +1,6 @@
 import base64
 import logging
-from flask import request, abort
+from flask import request
 from model.User import User
 import bcrypt
 
@@ -17,25 +17,8 @@ def check_user_credentials(user: User, password: str) -> int | None:
             return None
 
 
-def get_auth_key() -> str:
+def get_auth_key() -> str | None:
     """Get decoded Authentication token from headers as a string."""
-    authorization = request.headers.get('Authorization')
-
-    if not authorization:
-        abort(401, description="Authentication credentials were not provided.")
-
-    try:
-        logging.info(f"Authorization header received: {authorization}")
-        decoded_key = decode_str(authorization)
-        logging.info(f"Decoded key: {decoded_key}")
-        return decoded_key
-    except Exception as e:
-        logging.error(f"Error decoding authentication key: {e}")
-        abort(401, description="Invalid authentication credentials.")
-
-
-def get_auth_key_or_none() -> str | None:
-    """Get decoded Authentication token from headers as a string, without raising exception."""
     authorization = request.headers.get('Authorization')
 
     if authorization:
@@ -47,6 +30,7 @@ def get_auth_key_or_none() -> str | None:
         except Exception as e:
             logging.error(f"Error decoding authentication key: {e}")
             return None
+    logging.error("Authentication credentials were not provided.")
     return None
 
 

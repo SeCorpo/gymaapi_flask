@@ -72,10 +72,10 @@ def resize_and_crop_image(image: Image, resolution: tuple[int, int], file_size_k
         return Image.open(buffer)
     except Exception as e:
         logging.error(f"Error resizing image: {e}")
-        raise
+        return None
 
 
-def store_image(image: Image, file_name: str, location: str) -> str:
+def store_image(image: Image, file_name: str, location: str) -> str | None:
     """Save the image to a specified location and return the file name."""
     try:
         file_path = os.path.join(location, file_name)
@@ -83,7 +83,7 @@ def store_image(image: Image, file_name: str, location: str) -> str:
         return file_name
     except Exception as e:
         logging.error(f"Error storing image: {e}")
-        raise
+        return None
 
 
 def generate_random_filename(prefix: str, path: str) -> str:

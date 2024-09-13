@@ -18,6 +18,9 @@ def get_person_by_user_id(db: Session, user_id: int) -> Person | None:
     except SQLAlchemyError as e:
         logging.error(f"Error fetching person by user_id: {e}")
         return None
+    except Exception as e:
+        logging.error(f"Exception: Error fetching person by user_id: {e}")
+        return None
 
 
 def get_person_by_profile_url(db: Session, profile_url: str) -> Person | None:
@@ -30,6 +33,9 @@ def get_person_by_profile_url(db: Session, profile_url: str) -> Person | None:
         return None
     except SQLAlchemyError as e:
         logging.error(f"Error fetching person by profile_url: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"Exception: Error fetching person by profile_url: {e}")
         return None
 
 
@@ -61,6 +67,10 @@ def add_person(db: Session, user_id: int, enter_person_dto: EnterPersonDTO) -> P
         db.rollback()
         logging.error(f"Error adding person: {e}")
         return None
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Exception: Error adding person: {e}")
+        return None
 
 
 def edit_person(db: Session, user_id: int, person: Person, enter_person_dto: EnterPersonDTO) -> Person | None:
@@ -83,6 +93,10 @@ def edit_person(db: Session, user_id: int, person: Person, enter_person_dto: Ent
         db.rollback()
         logging.error(f"Failed to update person: {e}")
         return None
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Exception: Failed to update person: {e}")
+        return None
 
 
 def set_pf_paths(db: Session, person: Person, pf_path_l: str, pf_path_m: str) -> Person | None:
@@ -97,6 +111,10 @@ def set_pf_paths(db: Session, person: Person, pf_path_l: str, pf_path_m: str) ->
     except SQLAlchemyError as e:
         db.rollback()
         logging.error(f"Failed to set or change pf_paths: {e}")
+        return None
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Exception: Failed to set or change pf_paths: {e}")
         return None
 
 
@@ -127,4 +145,8 @@ def check_profile_url_available(db: Session, profile_url: str) -> bool:
     except SQLAlchemyError as e:
         db.rollback()
         logging.error(f"Error checking profile URL availability: {e}")
+        return False
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Exception: Error checking profile URL availability: {e}")
         return False
