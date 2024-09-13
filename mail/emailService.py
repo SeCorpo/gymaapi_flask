@@ -8,30 +8,33 @@ import smtplib
 from dotenv import load_dotenv
 
 load_dotenv()
+_email_connection = None
 
-_email_connection = None  # Cached mail server connection object
 
 def create_email_connection():
     """
     Create and return an SMTP mail server connection.
     This function will create a connection using the SMTP credentials provided in environment variables.
+    TLS is always used for securing the connection.
     """
     global _email_connection
     email_host = os.getenv("EMAIL_HOST")
     email_port = int(os.getenv("EMAIL_PORT"))
     email_username = os.getenv("EMAIL_USERNAME")
     email_password = os.getenv("EMAIL_PASSWORD")
-    use_tls = os.getenv("EMAIL_USE_TLS", True)
 
     try:
-        smtp_client = smtplib.SMTP(email_host, email_port)
-        if use_tls:
-            smtp_client.starttls()
+        logging.info(f"Connecting to SMTP server {email_host} on port {email_port}")
+        smtp_client = smtplib.SMTP(email_host, email_port, timeout=10)
+        smtp_client.ehlo()
+
+        logging.info("Starting TLS for the connection.")
+        smtp_client.starttls()
+        smtp_client.ehlo()
 
         smtp_client.login(email_username, email_password)
         _email_connection = smtp_client
-        logging.info("SMTP connection established and cached.")
-
+        logging.info("SMTP connection established and cached with TLS.")
     except smtplib.SMTPException as e:
         logging.error(f"Failed to create mail connection: {e}")
         _email_connection = None
@@ -56,6 +59,8 @@ def get_email_connection():
 
 def send_email(recipient: str, subject: str, content: str, content_type: str = "plain") -> bool:
     """ Sending an email to the recipient. Content types can be 'plain' or 'html'. """
+    global _email_connection
+
     try:
         smtp_client = get_email_connection()
         if smtp_client is None:
@@ -81,6 +86,10 @@ def send_email(recipient: str, subject: str, content: str, content_type: str = "
         logging.info(f"Email successfully sent to {recipient}")
         return True
 
+    except smtplib.SMTPServerDisconnected as e:
+        logging.error(f"SMTP server unexpectedly closed the connection: {e}")
+        _email_connection = None  # Reset connection
+        return False
     except Exception as e:
         logging.error(f"Failed to send mail: {e}")
         return False
