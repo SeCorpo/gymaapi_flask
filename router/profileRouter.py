@@ -17,7 +17,7 @@ from util.response import detail_response
 API_URL = os.getenv("API_BASE_URL")
 profile = Blueprint('profile', __name__, url_prefix='/api/v1/profile')
 
-
+# todo: make a way to unblock friendship
 @profile.route("/<string:profile_url>", methods=["GET"])
 def get_profile(profile_url):
     db: Session = next(get_db())
@@ -44,6 +44,8 @@ def get_profile(profile_url):
                         friendship_status = "received"
                     else:
                         friendship_status = "pending"
+                elif friendship.status == "blocked":
+                    return detail_response("Profile does not exist", 404)
                 else:
                     friendship_status = friendship.status
 

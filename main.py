@@ -17,6 +17,7 @@ from router.gymbroRouter import gymbro
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG)
+logging.getLogger('PIL').setLevel(logging.WARNING)
 
 # Initialize Flask application
 app = Flask(__name__)

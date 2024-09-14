@@ -56,8 +56,8 @@ def add_or_edit_person():
             ).model_dump(mode='json')
             my_profile_dto = MyProfileDTO(
                 personDTO=person_dto,
-                friend_list=None,
-                pending_friend_list=None
+                friend_list=[],
+                pending_friend_list=[]
             ).model_dump(mode='json')
             return jsonify(my_profile_dto), 200
     else:
