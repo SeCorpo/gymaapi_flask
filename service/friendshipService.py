@@ -92,6 +92,20 @@ def update_friendship_status(db: Session, friendship: Friendship, status: str) -
         logging.error(f"Failed to update friendship status: {e}")
         return False
 
+def block_friendship(db: Session, friendship: Friendship, person_id: int) -> bool:
+    """ This function makes sure to make the blocking person the primary (initiating) party of the friendship. """
+    try:
+        if friendship.person_id != person_id:
+            friendship.person_id, friendship.friend_id = friendship.friend_id, friendship.person_id
+
+        friendship.status = "blocked"
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error blocking friendship: {e}")
+        return False
+
 
 def remove_friendship(db: Session, friendship: Friendship) -> bool:
     """ Remove a friendship. """
@@ -121,11 +135,12 @@ def get_pending_friendships_to_be_accepted(db: Session, person_id: int) -> list[
 def get_blocked_friendships(db: Session, person_id: int) -> list[Person]:
     """ Get all persons blocked by person_id. """
     result = db.execute(
-        select(Person).join(Friendship).where(
+        select(Person).join(Person.friends).where(
             and_(
                 Friendship.person_id == person_id,
-                Friendship.status == 'blocked'
-            )
+                Friendship.status == 'blocked',
+                Person.person_id != person_id
+            ),
         ).options(joinedload(Person.friends)).distinct()
     )
     return list(result.scalars().unique().all())

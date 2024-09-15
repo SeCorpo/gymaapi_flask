@@ -8,7 +8,7 @@ from dto.personDTO import PersonDTO, PersonSimpleDTO
 from dto.profileDTO import ProfileDTO
 from provider.authProvider import get_auth_key
 from service.friendshipService import get_friends_by_person_id, get_friendship, add_friendship, remove_friendship, \
-    get_friendship_of_requester, update_friendship_status
+    get_friendship_of_requester, update_friendship_status, block_friendship
 from service.personService import get_person_by_profile_url, get_person_by_user_id
 from session.sessionService import get_user_id_from_session_data
 from util.response import detail_response
@@ -16,7 +16,6 @@ from util.response import detail_response
 API_URL = os.getenv("API_BASE_URL")
 profile = Blueprint('profile', __name__, url_prefix='/api/v1/profile')
 
-# todo: make a way to unblock friendship
 @profile.route("/<string:profile_url>", methods=["GET"])
 def get_profile(profile_url):
     db: Session = next(get_db())
@@ -222,14 +221,49 @@ def block_friend_by_profile(profile_url):
     if person_by_profile_url is None:
         return detail_response("Profile does not exist", 404)
 
-    friendship_to_be_blocked = get_friendship_of_requester(db, person_by_profile_url.person_id, user_id)
+    friendship_to_be_blocked = get_friendship(db, user_id, person_by_profile_url.person_id)
     if friendship_to_be_blocked is None:
         return detail_response("Cannot block friendship before it starts", 403)
     if friendship_to_be_blocked.status == "blocked":
         return detail_response("Already blocked", 403)
 
-    friendship_blocked = update_friendship_status(db, friendship_to_be_blocked, "blocked")
+    friendship_blocked = block_friendship(db, friendship_to_be_blocked, user_id)
     if friendship_blocked:
         return "true", 200
     else:
         return detail_response("Unable to block person", 500)
+
+
+@profile.route("/unblock/<string:profile_url>", methods=["GET"])
+def unblock_friend_by_profile(profile_url):
+    db: Session = next(get_db())
+    auth_token = get_auth_key()
+
+    if auth_token is None:
+        return detail_response("Session invalid", 401)
+
+    logging.info("Unblock friendship request with profile url: %s", profile_url)
+
+    user_id = get_user_id_from_session_data(auth_token)
+    if user_id is None:
+        return detail_response("Session invalid", 401)
+
+    requester_has_profile = get_person_by_user_id(db, user_id)
+    if requester_has_profile is None:
+        return detail_response("Create a profile first", 401)
+
+    person_by_profile_url = get_person_by_profile_url(db, profile_url)
+    if person_by_profile_url is None:
+        return detail_response("Profile does not exist", 404)
+
+    friendship_to_be_unblocked = get_friendship(db, user_id, person_by_profile_url.person_id)
+    if friendship_to_be_unblocked is None:
+        return detail_response("No friendship to unblock", 403)
+    if friendship_to_be_unblocked.status != "blocked":
+        return detail_response("This person is not blocked", 403)
+
+    removed_friendship = remove_friendship(db, friendship_to_be_unblocked)
+    if removed_friendship:
+        return "true", 200
+    else:
+        return detail_response("Unable to unblock friendship", 400)
