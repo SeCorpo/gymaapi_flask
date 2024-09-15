@@ -9,7 +9,8 @@ from dto.profileDTO import MyProfileDTO
 from mail.emailService import send_verification_email
 from provider.authProvider import check_user_credentials, encode_str, get_auth_key
 from dto.loginDTO import LoginDTO, LoginResponseDTO
-from service.friendshipService import get_friends_by_person_id, get_pending_friendships_to_be_accepted
+from service.friendshipService import get_friends_by_person_id, get_pending_friendships_to_be_accepted, \
+    get_blocked_friendships
 from service.personService import get_person_by_user_id
 from service.userService import get_user_by_email, get_user_by_user_id, set_email_verification
 from service.userVerificationService import get_user_id_by_verification_code, remove_user_verification, get_verification_code_by_user_id
@@ -86,10 +87,23 @@ def login():
             for friend in pending_friends
         ]
 
+        blocked_friends = get_blocked_friendships(db, user_id_of_ok_credentials)
+        blocked_friend_list = [
+            PersonSimpleDTO(
+                profile_url=friend.profile_url,
+                first_name=friend.first_name,
+                last_name=friend.last_name,
+                sex=friend.sex,
+                pf_path_m=f"{API_URL}/images/medium/{friend.pf_path_m}" if friend.pf_path_m else None,
+            ).model_dump(mode='json')
+            for friend in blocked_friends
+        ]
+
         my_profile_dto = MyProfileDTO(
             personDTO=person_dto,
             friend_list=friend_list,
-            pending_friend_list=pending_friend_list
+            pending_friend_list=pending_friend_list,
+            blocked_friend_list=blocked_friend_list,
         ).model_dump(mode='json')
     else:
         my_profile_dto = None

@@ -15,3 +15,4 @@ class MyProfileDTO(BaseModel):
     personDTO: PersonDTO
     friend_list: List[PersonSimpleDTO] = []
     pending_friend_list: List[PersonSimpleDTO] = []
+    blocked_friend_list: List[PersonSimpleDTO] = []
