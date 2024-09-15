@@ -1,4 +1,5 @@
 import logging
+import os
 from flask import Blueprint, request, jsonify, abort
 from sqlalchemy.orm import Session
 from typing import List
@@ -13,6 +14,7 @@ from service.personService import get_person_by_user_id
 from session.sessionService import get_user_id_from_session_data
 from util.response import detail_response
 
+API_URL = os.getenv("API_BASE_URL")
 mine = Blueprint('mine', __name__, url_prefix='/api/v1/mine')
 
 
@@ -37,7 +39,7 @@ def get_mine_three_latest():
         first_name=person_of_gyma.first_name,
         last_name=person_of_gyma.last_name,
         sex=person_of_gyma.sex,
-        pf_path_m=person_of_gyma.pf_path_m,
+        pf_path_m=f"{API_URL}/images/medium/{person_of_gyma.pf_path_m}" if person_of_gyma.pf_path_m else None,
     ).model_dump(mode='json')
 
     mine_gyma_with_exercises = []

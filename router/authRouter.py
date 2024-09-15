@@ -1,5 +1,4 @@
 import os
-
 from flask import Blueprint, request, jsonify, abort
 from sqlalchemy.orm import Session
 import logging
@@ -55,7 +54,7 @@ def login():
                 first_name=friend.first_name,
                 last_name=friend.last_name,
                 sex=friend.sex,
-                pf_path_m=friend.pf_path_m
+                pf_path_m=f"{API_URL}/images/medium/{friend.pf_path_m}" if friend.pf_path_m else None,
             ).model_dump(mode='json')
             for friend in friends
         ]
@@ -82,7 +81,7 @@ def login():
                 first_name=friend.first_name,
                 last_name=friend.last_name,
                 sex=friend.sex,
-                pf_path_m=friend.pf_path_m
+                pf_path_m=f"{API_URL}/images/medium/{friend.pf_path_m}" if friend.pf_path_m else None,
             ).model_dump(mode='json')
             for friend in pending_friends
         ]

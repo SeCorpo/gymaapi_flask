@@ -51,8 +51,8 @@ def add_or_edit_person():
                 sex=new_person.sex,
                 city=new_person.city,
                 profile_text=new_person.profile_text,
-                pf_path_l=new_person.pf_path_l,
-                pf_path_m=new_person.pf_path_m,
+                pf_path_l=new_person.pf_path_l, # will be None
+                pf_path_m=new_person.pf_path_m, # will be None
             ).model_dump(mode='json')
             my_profile_dto = MyProfileDTO(
                 personDTO=person_dto,
