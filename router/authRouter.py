@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, request, jsonify, abort
+from flask import Blueprint, request, jsonify
 from sqlalchemy.orm import Session
 import logging
 
@@ -24,22 +24,26 @@ auth = Blueprint('auth', __name__, url_prefix='/api/v1/auth')
 @auth.route("/login", methods=['POST'])
 def login():
     db: Session = next(get_db())
-    login_dto = request.json
 
-    logging.info(f"Attempting login for user with email: {login_dto['email']}")
+    try:
+        login_dto = LoginDTO(**request.json)
+    except Exception as e:
+        return detail_response(f"Invalid data: {e}", 400)
 
-    user = get_user_by_email(db, login_dto['email'])
+    logging.info(f"Attempting login for user with email: {login_dto.email}")
+
+    user = get_user_by_email(db, login_dto.email)
     if user is None:
         return detail_response("User not found", 400)
 
-    user_id_of_ok_credentials = check_user_credentials(user, login_dto['password'])
+    user_id_of_ok_credentials = check_user_credentials(user, login_dto.password)
     if user_id_of_ok_credentials is None:
         return detail_response("Incorrect email or password", 401)
 
     if not user.email_verified:
         return detail_response("Email not verified. Please check your email to verify your account.", 403)
 
-    session_object_only_user_id = SessionDataObject(user_id=user_id_of_ok_credentials, trustDevice=login_dto.get('trustDevice', False))
+    session_object_only_user_id = SessionDataObject(user_id=user_id_of_ok_credentials, trustDevice=login_dto.trustDevice)
     raw_session_key = set_session(session_object_only_user_id)
     if raw_session_key is None:
         return detail_response("Unable to login, please try later", 500)
@@ -111,7 +115,7 @@ def login():
     return jsonify({
         "session_token": encoded_session_key,
         "myProfileDTO": my_profile_dto,
-        "device_trusted": login_dto.get('trustDevice', False),
+        "device_trusted": login_dto.trustDevice,
     }), 200
 
 
