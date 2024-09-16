@@ -16,3 +16,8 @@ class MyProfileDTO(BaseModel):
     friend_list: List[PersonSimpleDTO] = []
     pending_friend_list: List[PersonSimpleDTO] = []
     blocked_friend_list: List[PersonSimpleDTO] = []
+
+class MyProfileUpdateListsDTO(BaseModel):
+    friend_list: List[PersonSimpleDTO] = []
+    pending_friend_list: List[PersonSimpleDTO] = []
+    blocked_friend_list: List[PersonSimpleDTO] = []

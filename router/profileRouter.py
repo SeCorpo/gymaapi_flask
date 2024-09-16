@@ -5,10 +5,11 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from dto.personDTO import PersonDTO, PersonSimpleDTO
-from dto.profileDTO import ProfileDTO
+from dto.profileDTO import ProfileDTO, MyProfileUpdateListsDTO
 from provider.authProvider import get_auth_key
 from service.friendshipService import get_friends_by_person_id, get_friendship, add_friendship, remove_friendship, \
-    get_friendship_of_requester, update_friendship_status, block_friendship
+    get_friendship_of_requester, update_friendship_status, block_friendship, get_pending_friendships_to_be_accepted, \
+    get_blocked_friendships
 from service.personService import get_person_by_profile_url, get_person_by_user_id
 from session.sessionService import get_user_id_from_session_data
 from util.response import detail_response
@@ -85,6 +86,67 @@ def get_profile(profile_url):
     ).model_dump(mode='json')
 
     return jsonify(profile_dto), 200
+
+
+@profile.route("/update_lists", methods=["POST"])
+def update_my_profile_lists():
+    db: Session = next(get_db())
+    auth_token = get_auth_key()
+
+    if auth_token is None:
+        return detail_response("Session invalid", 401)
+
+    user_id = get_user_id_from_session_data(auth_token)
+    if user_id is None:
+        return detail_response("Session invalid", 401)
+
+    requester_has_profile = get_person_by_user_id(db, user_id)
+    if requester_has_profile is None:
+        return detail_response("Create a profile first", 401)
+
+    friends = get_friends_by_person_id(db, user_id)
+    friend_list = [
+        PersonSimpleDTO(
+            profile_url=friend.profile_url,
+            first_name=friend.first_name,
+            last_name=friend.last_name,
+            sex=friend.sex,
+            pf_path_m=f"{API_URL}/images/medium/{friend.pf_path_m}" if friend.pf_path_m else None,
+        )
+        for friend in friends
+    ]
+
+    pending_friends = get_pending_friendships_to_be_accepted(db, user_id)
+    pending_friend_list = [
+        PersonSimpleDTO(
+            profile_url=friend.profile_url,
+            first_name=friend.first_name,
+            last_name=friend.last_name,
+            sex=friend.sex,
+            pf_path_m=f"{API_URL}/images/medium/{friend.pf_path_m}" if friend.pf_path_m else None,
+        )
+        for friend in pending_friends
+    ]
+
+    blocked_friends = get_blocked_friendships(db, user_id)
+    blocked_friend_list = [
+        PersonSimpleDTO(
+            profile_url=friend.profile_url,
+            first_name=friend.first_name,
+            last_name=friend.last_name,
+            sex=friend.sex,
+            pf_path_m=f"{API_URL}/images/medium/{friend.pf_path_m}" if friend.pf_path_m else None,
+        )
+        for friend in blocked_friends
+    ]
+
+    profile_update_dto = MyProfileUpdateListsDTO(
+        friend_list=friend_list,
+        pending_friend_list=pending_friend_list,
+        blocked_friend_list=blocked_friend_list,
+    )
+
+    return jsonify(profile_update_dto.model_dump()), 200
 
 
 @profile.route("/request/<string:profile_url>", methods=["GET"])
