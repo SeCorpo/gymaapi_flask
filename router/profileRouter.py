@@ -88,7 +88,7 @@ def get_profile(profile_url):
     return jsonify(profile_dto), 200
 
 
-@profile.route("/update_lists", methods=["POST"])
+@profile.route("/update_lists", methods=["GET"])
 def update_my_profile_lists():
     db: Session = next(get_db())
     auth_token = get_auth_key()
