@@ -1,4 +1,6 @@
 import logging
+import os
+
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from sqlalchemy import create_engine, text
@@ -25,8 +27,15 @@ app = Flask(__name__)
 # Enable CORS middleware
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, allow_headers=["Authorization", "Content-Type", "Gymakeys"])
 
-# Database configuration (you can replace this with your actual DB URL)
-DATABASE_URL = 'sqlite:///./test.db'  # Replace with your actual database connection string
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "3306")
+DB_NAME = os.getenv("DB_NAME", "gyma_db")
+DB_DRIVER = os.getenv("DB_DRIVER", "pymysql")
+
+DATABASE_URL = f"mysql+{DB_DRIVER}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
@@ -56,7 +65,7 @@ def initialize_database():
     finally:
         session.close()
 
-# initialize_database()
+initialize_database()
 
 # Root route
 @app.route('/')
@@ -77,6 +86,3 @@ app.register_blueprint(pub)
 app.register_blueprint(person)
 app.register_blueprint(profile)
 app.register_blueprint(gymbro)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)

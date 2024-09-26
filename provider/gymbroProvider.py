@@ -15,13 +15,26 @@ def get_last_ten_gyma_entries_of_user_and_friends(db: Session, user_id: int, gym
     try:
         gyma_keys_to_exclude = gyma_keys.split(",") if gyma_keys else []
 
-        # Fetch friend IDs of the user
+        # Fetch friend IDs of the user (ensure both person_id and friend_id are considered)
         friends_query = (
-            select(Friendship.friend_id)
-            .where(Friendship.person_id == user_id)
+            select(Friendship.person_id, Friendship.friend_id)
+            .where(
+                or_(
+                    Friendship.person_id == user_id,
+                    Friendship.friend_id == user_id
+                )
+            )
+            .where(Friendship.status == "accepted")
         )
         friends_result = db.execute(friends_query)
-        friend_ids = [row[0] for row in friends_result.fetchall()]
+
+        # Collect friend IDs by checking which one is not the user_id
+        friend_ids = set()  # use a set to avoid duplicates
+        for row in friends_result.fetchall():
+            if row[0] != user_id:
+                friend_ids.add(row[0])  # person_id
+            if row[1] != user_id:
+                friend_ids.add(row[1])  # friend_id
 
         if not friend_ids:
             return []
