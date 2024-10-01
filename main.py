@@ -11,7 +11,6 @@ from database import Base
 from router.authRouter import auth
 from router.userRouter import user
 from router.gymaRouter import gyma
-from router.mineRouter import mine
 from router.pubRouter import pub
 from router.personRouter import person
 from router.profileRouter import profile
@@ -81,7 +80,6 @@ def say_hello(name):
 app.register_blueprint(auth)
 app.register_blueprint(user)
 app.register_blueprint(gyma)
-app.register_blueprint(mine)
 app.register_blueprint(pub)
 app.register_blueprint(person)
 app.register_blueprint(profile)
