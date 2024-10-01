@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 import logging
 
 from database import get_db
+from dto.exerciseDTO import ExerciseDTO
+from dto.gymaDTO import GymaDTO
 from dto.personDTO import PersonDTO, PersonSimpleDTO
 from dto.profileDTO import MyProfileDTO
 from mail.emailService import send_verification_email
@@ -11,6 +13,7 @@ from provider.authProvider import check_user_credentials, encode_str, get_auth_k
 from dto.loginDTO import LoginDTO, LoginResponseDTO
 from service.friendshipService import get_friends_by_person_id, get_pending_friendships_to_be_accepted, \
     get_blocked_friendships
+from service.gymaService import get_last_five_gyma_entry_of_user
 from service.personService import get_person_by_user_id
 from service.userService import get_user_by_email, get_user_by_user_id, set_email_verification
 from service.userVerificationService import get_user_id_by_verification_code, remove_user_verification, get_verification_code_by_user_id
@@ -102,9 +105,46 @@ def login():
             ).model_dump(mode='json')
             for friend in blocked_friends
         ]
+        five_latest_gyma = get_last_five_gyma_entry_of_user(db, user_id_of_ok_credentials)
+
+        my_person_simple_dto = PersonSimpleDTO(
+            profile_url=person.profile_url,
+            first_name=person.first_name,
+            last_name=person.last_name,
+            sex=person.sex,
+            pf_path_m=f"{API_URL}/images/medium/{person.pf_path_m}" if person.pf_path_m else None,
+        ).model_dump(mode='json')
+
+        mine_gyma_with_exercises = []
+        for gyma in five_latest_gyma:
+            exercise_dtos = [
+                ExerciseDTO(
+                    exercise_name=exercise.exercise.exercise_name,
+                    exercise_type=exercise.exercise.exercise_type,
+                    count=exercise.exercise.count,
+                    sets=exercise.exercise.sets,
+                    weight=exercise.exercise.weight,
+                    minutes=exercise.exercise.minutes,
+                    km=exercise.exercise.km,
+                    level=exercise.exercise.level,
+                    description=exercise.exercise.description,
+                ).model_dump(mode='json')
+                for exercise in gyma.exercises
+            ]
+
+            gyma_dto = GymaDTO(
+                gyma_id=gyma.gyma_id,
+                person=my_person_simple_dto,
+                time_of_arrival=gyma.time_of_arrival,
+                time_of_leaving=gyma.time_of_leaving,
+                exercises=exercise_dtos
+            ).model_dump(mode='json')
+
+            mine_gyma_with_exercises.append(gyma_dto)
 
         my_profile_dto = MyProfileDTO(
             personDTO=person_dto,
+            gyma_list=mine_gyma_with_exercises,
             friend_list=friend_list,
             pending_friend_list=pending_friend_list,
             blocked_friend_list=blocked_friend_list,

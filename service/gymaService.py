@@ -1,12 +1,13 @@
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from model.Gyma import Gyma
+from model.GymaExercise import GymaExercise
 
 
 def get_gyma_by_gyma_id(db: Session, gyma_id: int) -> Optional[Gyma]:
@@ -63,3 +64,29 @@ def set_time_of_leaving(db: Session, user_id: int, gyma: Gyma) -> Optional[datet
         logging.error(f"Error setting time of leaving: {e}")
         db.rollback()
         return None
+
+
+def get_last_five_gyma_entry_of_user(db: Session, user_id: int, gyma_keys: str = None) -> List[Gyma]:
+    """ Get last three gyma entries of a user by time_of_leaving, include associated exercises. """
+
+    try:
+        gyma_keys_to_exclude = gyma_keys.split(",") if gyma_keys else []
+
+        query = (
+            select(Gyma)
+            .options(joinedload(Gyma.exercises).joinedload(GymaExercise.exercise))
+            .order_by(desc(Gyma.time_of_leaving))
+            .limit(5)
+            .where(Gyma.user_id == user_id)
+            .where(~Gyma.gyma_id.in_(gyma_keys_to_exclude))
+            .where(Gyma.time_of_leaving.isnot(None))
+        )
+
+        result = db.execute(query)
+        three_latest_gyma = result.scalars().unique().all()
+
+        return list(three_latest_gyma)
+
+    except Exception as e:
+        logging.error(f"Error fetching gyma entries: {e}")
+        return []
