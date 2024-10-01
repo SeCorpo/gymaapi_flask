@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from dto.imageDTO import ImageDTO
-from dto.personDTO import PersonDTO, EnterPersonDTO
+from dto.personDTO import PersonDTO, EnterPersonDTO, PersonSimpleDTO
 from dto.profileDTO import MyProfileDTO
 from provider.authProvider import get_auth_key
 from provider.imageProvider import process_image, move_images_to_archive
+from provider.searchProvider import search_by_profile_url, search_by_first_and_last_name
 from service.personService import add_person, get_person_by_user_id, edit_person, set_pf_paths
 from session.sessionService import get_user_id_from_session_data
 from util.response import detail_response
@@ -137,3 +138,41 @@ def upload_picture():
         pf_path_l=f"{API_URL}/images/large/{person_with_pf_paths.pf_path_l}",
         pf_path_m=f"{API_URL}/images/medium/{person_with_pf_paths.pf_path_m}",
     ).model_dump(mode='json')), 200
+
+
+@person.route("/search/<string:query>", methods=["GET"])
+def search_person(query: str):
+    db: Session = next(get_db())
+
+    if query is None:
+        return detail_response("Please enter a search query", 400)
+
+    possible_matches = []
+
+    name_parts = query.split()
+
+    if len(name_parts) == 1:
+        profile_url_results = search_by_profile_url(db, query)
+        if profile_url_results:
+            possible_matches.extend(profile_url_results)
+    elif len(name_parts) == 2:
+        name_results = search_by_first_and_last_name(db, query)
+        if name_results:
+            possible_matches.extend(name_results)
+    else:
+        return detail_response("Invalid search query format", 400)
+
+    if not possible_matches:
+        return detail_response("No matches found", 400)
+
+    possible_matches_dto = [
+        PersonSimpleDTO(
+            profile_url=match_person.profile_url,
+            first_name=match_person.first_name,
+            last_name=match_person.last_name,
+            sex=match_person.sex,
+            pf_path_m=f"{API_URL}/images/medium/{match_person.pf_path_m}" if match_person.pf_path_m else None,
+        ).model_dump(mode='json')
+        for match_person in possible_matches]
+
+    return possible_matches_dto, 200
