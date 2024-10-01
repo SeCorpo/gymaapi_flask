@@ -70,7 +70,7 @@ def end_gyma():
         return detail_response("Failed to set time of leave", 400)
 
     if delete_gyma_id_from_session(auth_token):
-        return jsonify({"time_of_leaving": time_of_leaving}), 200
+        return {"time_of_leaving": time_of_leaving.isoformat()}, 200
     else:
         return detail_response("Gyma cannot be removed from session", 400)
 
