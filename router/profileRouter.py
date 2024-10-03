@@ -96,6 +96,7 @@ def get_profile(profile_url):
     for gyma in five_latest_gyma:
         exercise_dtos = [
             ExerciseDTO(
+                exercise_id=exercise.exercise_id,
                 exercise_name=exercise.exercise.exercise_name,
                 exercise_type=exercise.exercise.exercise_type,
                 count=exercise.exercise.count,
@@ -226,6 +227,7 @@ def get_five_more_gyma_of_profile(profile_url):
                 for gyma in five_more_my_gyma:
                     exercise_dtos = [
                         ExerciseDTO(
+                            exercise_id=exercise.exercise.exercise_id,
                             exercise_name=exercise.exercise.exercise_name,
                             exercise_type=exercise.exercise.exercise_type,
                             count=exercise.exercise.count,
@@ -278,6 +280,7 @@ def get_five_more_gyma_of_profile(profile_url):
     for gyma in five_more_gyma:
         exercise_dtos = [
             ExerciseDTO(
+                exercise_id=exercise.exercise.exercise_id,
                 exercise_name=exercise.exercise.exercise_name,
                 exercise_type=exercise.exercise.exercise_type,
                 count=exercise.exercise.count,

@@ -87,8 +87,8 @@ def add_exercise_to_gyma():
     exercise_dto = request.json
     exercise_data = ExerciseDTO(**exercise_dto)
 
-    added_exercise = add_exercise_db(db, session_data.gyma_id, exercise_data)
-    if added_exercise:
-        return jsonify(added_exercise), 201
+    added_exercise_id = add_exercise_db(db, session_data.gyma_id, exercise_data)
+    if added_exercise_id is not None:
+        return {"exercise_id": added_exercise_id}, 201
     else:
         return detail_response("Failed to add exercise", 400)

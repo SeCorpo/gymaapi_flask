@@ -45,6 +45,7 @@ def get_gymbro_ten_latest():
 
         exercise_dtos = [
             ExerciseDTO(
+                exercise_id=exercise.exercise.exercise_id,
                 exercise_name=exercise.exercise.exercise_name,
                 exercise_type=exercise.exercise.exercise_type,
                 count=exercise.exercise.count,

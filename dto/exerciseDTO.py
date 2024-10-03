@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class ExerciseDTO(BaseModel):
+    exercise_id: int = Field(default=None)
     exercise_name: str
     exercise_type: str
     count: int | None = Field(default=None)

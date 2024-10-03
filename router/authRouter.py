@@ -119,6 +119,7 @@ def login():
         for gyma in five_latest_gyma:
             exercise_dtos = [
                 ExerciseDTO(
+                    exercise_id=exercise.exercise_id,
                     exercise_name=exercise.exercise.exercise_name,
                     exercise_type=exercise.exercise.exercise_type,
                     count=exercise.exercise.count,

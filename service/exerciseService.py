@@ -33,7 +33,7 @@ def get_exercises_by_gyma_id(db: Session, gyma_id: int) -> List[Exercise] | None
         return None
 
 
-def add_exercise_db(db: Session, gyma_id: int, exercise_dto: ExerciseDTO) -> bool:
+def add_exercise_db(db: Session, gyma_id: int, exercise_dto: ExerciseDTO) -> int | None:
     """ Add a new exercise to a Gyma and create a record in GymaExercise table. """
     try:
         new_exercise = Exercise(
@@ -57,9 +57,9 @@ def add_exercise_db(db: Session, gyma_id: int, exercise_dto: ExerciseDTO) -> boo
         db.commit()
 
         if gyma_exercise and new_exercise:
-            return True
+            return new_exercise.exercise_id
 
-        abort(500, description="Failed to add new exercise and connection to gyma.")
+        return None
     except SQLAlchemyError as e:
         logging.error(f"Error adding exercise to gyma: {e}")
         db.rollback()

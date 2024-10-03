@@ -24,6 +24,7 @@ def get_pub_ten_latest():
     for gyma in pub_ten_latest_gyma:
         exercise_dtos = [
             ExerciseDTO(
+                exercise_id=exercise.exercise.exercise_id,
                 exercise_name=exercise.exercise.exercise_name,
                 exercise_type=exercise.exercise.exercise_type,
                 count=exercise.exercise.count,
