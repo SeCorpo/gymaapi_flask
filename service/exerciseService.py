@@ -63,4 +63,43 @@ def add_exercise_db(db: Session, gyma_id: int, exercise_dto: ExerciseDTO) -> int
     except SQLAlchemyError as e:
         logging.error(f"Error adding exercise to gyma: {e}")
         db.rollback()
+        return None
+
+
+def remove_exercise_by_gyma_and_id(db: Session, gyma_id: int, exercise_id: int) -> bool:
+    """ Remove an Exercise and its related GymaExercise from the database based on gyma_id and exercise details. """
+    try:
+        exercise_query = (
+            select(Exercise)
+            .join(GymaExercise, GymaExercise.exercise_id == Exercise.exercise_id)
+            .filter(GymaExercise.gyma_id == gyma_id)
+            .filter(Exercise.exercise_id == exercise_id)
+        )
+
+        exercise = db.execute(exercise_query).scalar_one_or_none()
+
+        if exercise is None:
+            logging.error("Exercise not found")
+            return False
+
+        gyma_exercise_query = (
+            select(GymaExercise)
+            .filter(GymaExercise.gyma_id == gyma_id, GymaExercise.exercise_id == exercise.exercise_id)
+        )
+
+        gyma_exercise = db.execute(gyma_exercise_query).scalar_one_or_none()
+
+        db.delete(gyma_exercise)
+        db.delete(exercise)
+
+        db.commit()
+        return True
+
+    except SQLAlchemyError as e:
+        logging.error(f"Error removing exercise and its related gyma_exercise: {e}")
+        db.rollback()
+        return False
+    except Exception as e:
+        logging.error(f"Exception: Error removing exercise: {e}")
+        db.rollback()
         return False

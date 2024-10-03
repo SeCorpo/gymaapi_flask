@@ -90,3 +90,32 @@ def get_last_five_gyma_entry_of_user(db: Session, user_id: int, gyma_keys: str =
     except Exception as e:
         logging.error(f"Error fetching gyma entries: {e}")
         return []
+
+
+def remove_gyma_and_exercises(db: Session, gyma: Gyma) -> bool:
+    """ Remove a Gyma and all its associated exercises from the database. """
+    try:
+        if gyma is None:
+            logging.error("Gyma object is None")
+            return False
+
+        gyma_exercises = db.execute(select(GymaExercise).filter_by(gyma_id=gyma.gyma_id)).scalars().all()
+        for gyma_exercise in gyma_exercises:
+            db.delete(gyma_exercise)
+
+        for exercise in gyma.exercises:
+            db.delete(exercise)
+
+        db.delete(gyma)
+
+        db.commit()
+        return True
+
+    except SQLAlchemyError as e:
+        logging.error(f"Error removing gyma and its exercises: {e}")
+        db.rollback()
+        return False
+    except Exception as e:
+        logging.error(f"Exception: Error remove gyma and its exercises: {e}")
+        db.rollback()
+        return False
